@@ -198,6 +198,67 @@ void handle_client(int client_socket, ofstream& chat_log) {
 
 
 int main() {
+	// create socket
+	int server_socket = socket(AF_IFNET, SOCK_STREAM, 0);
+	if (server_socket < 0) {
+		cerr << "Error creating socket" << endl;
+		return 1;
+	}
+
+	// bind socket to port
+	sockaddr_in server_addr;
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(PORT);
+	server_addr.sin_addr.s_addr = INADDR_ANY;
+
+	if (bind(server_socket, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+		cerr << "Error binding socket" << endl;
+		return 1;
+	}
+
+	// listen for incoming con.
+	if (listen(server_socket, 5) < 0) {
+		cerr << "Error listening on socket" << endl;
+		return 1;
+	}
+
+	cout << "Server started on port " << PORT << endl;
+
+	// init. client_sockets array
+	memset(client_sockets, -1, sizeof(client_sockets));
+
+	// open chat log
+	ofstream chat_log("chat_log.txt");
+	if (!chat_log) {
+		cerr << "Error opening chat log file" << endl;
+		return 1;
+	}
+
+	// accept incoming con. handle them in separate threads
+	while (true) {
+		sockaddr_in client_addr;
+		socklen_t client_addr_size = sizeof(client_addr);
+		int client_socket = accept(server_socket, (sockaddr*)&client_addr, &client_addr_size);
+		if (client_socket < 0) {
+			cerr << "Error accepting connection" << endl;
+			continue;
+		}
+
+		lock_guard<mutex> lock(mtx);
+		for (int i = 0; i < MAX_CLIENTS; i++) {
+			if (client_sockets[i] == -1) {
+				client_sockets[i] = client_socket;
+				break;
+			}
+		}
+
+		thread t(handle_client, client_socket, ref(chat_log));
+		t.detach();
+	}
+
+	// close chat log file and server socket
+	chat_log.close();
+	close(server_socket);
 	return 0;
 }
 
@@ -217,5 +278,5 @@ int main() {
 * https://github.com/nnnyt/chat
 * https://yusufsefasezer.github.io/ysSocketChat/
 * https://simpledevcode.wordpress.com/2016/06/16/client-server-chat-in-c-using-sockets/
-* 
+* https://tldp.org/LDP/LG/issue74/tougher.html
 */

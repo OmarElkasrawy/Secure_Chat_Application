@@ -153,6 +153,38 @@ void handle_client(int client_socket, ofstream& chat_log) {
 	}
 
 	//while loop to recv msg, send msg to other clients
+	while (true) {
+		memset(buffer, 0, sizeof(buffer));
+		int bytes_received = recv(client_socket, buffer, sizeof(buffer), 0);
+		if (bytes_received <= 0) {
+			break;
+		}
+
+		// print unencrypted msg on server
+		cout << "Client " << client_socket << ": " << buffer << endl;
+
+		lock_guard<mutex> lock(mtx);
+		for (int i = 0; i < MAX_CLIENTS; i++) {
+			if (client_sockets[i] != -1 && client_sockets[i] != client_socket) {
+				send(client_sockets[i], buffer, bytes_received, 0);
+			}
+		}
+
+		// encrypt recv msg before writing to chat log
+		string encrypted_message = caesar_encrypt(buffer, 3); // const string &message, int shift
+		chat_log << "Client " << client_socket << ": " << encrypted_message << endl;
+	}
+
+	close(client_socket);
+	remove_client(client_socket);
+
+	lock_guard<mutex> lock(mtx);
+	for (int i = 0; i < MAX_CLIENTS; i++) {
+		if (client_sockets[i] == client_socket) {
+			client_sockets[i] = -1;
+			break;
+		}
+	}
 }
 
 

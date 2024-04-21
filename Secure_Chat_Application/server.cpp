@@ -81,9 +81,78 @@ bool authenticate(const string& username, const string& password) {
 		}
 	}
 
-
 	// entered and cond. invalid 
+	cout << "Entered username: " << username << ", Entered password: " << password << endl;
+	cout << "Invalid creds!";
+	return false;
+}
 
+// handle client connection
+void handle_client(int client_socket, ofstream& chat_log) {
+	int current_client_number;
+	{
+		lock_guard<mutex> lock(mtx);
+		client_count++;
+		current_client_number = client_count;
+	}
+
+	char buffer[1024];
+
+	// flag
+	bool authenticated = false;
+	string username, password;
+	while (!authenticate) {
+		// recv user length
+		int username_length;
+		int bytes_received = recv(client_socket, &username_length, size(username_length), 0);
+		if (bytes_received <= 0) {
+			close(client_socket);
+			return;
+		}
+
+
+		// recv username
+		bytes_received = recv(client_socket, buffer, username_length, 0);
+		if (bytes_received <= 0) {
+			close(client_socket);
+			return;
+		}
+
+		buffer[bytes_received] = '\0';
+		username = string(buffer, username_length);
+
+		// recv password length
+		int password_length;
+		bytes_received = recv(client_socket, &password_length, sizeof(password_length), 0);
+		if (bytes_received <= 0) {
+			close(client_socket);
+			return;
+		}
+
+		// recv password
+		bytes_received = recv(client_socket, buffer, password_length, 0);
+		if (bytes_received <= 0) {
+			close(client_socket);
+			return;
+		}
+
+		buffer[bytes_received] = '\0'; //null terminate
+		password = string(buffer, password_length);
+
+		// check creds
+		authenticated = authenticate(username, password);
+
+		// send auth to client
+		const char* auth_result = authenticated ? "OK" : "ERROR";
+		send(client_socket, auth_result, strlen(auth_result), 0);
+
+		if (!authenticated) {
+			close(client_socket);
+			return;
+		}
+	}
+
+	//while loop to recv msg, send msg to other clients
 }
 
 

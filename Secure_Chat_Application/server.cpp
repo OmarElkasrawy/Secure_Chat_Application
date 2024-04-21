@@ -40,6 +40,52 @@ string caesar_encrypt(const string& message, int shift) {
 }
 
 
+// remove client from client_sockets
+void remove_client(int client_socket) {
+	lock_guard<mutex> lock(mtx);
+	for (int i = 0; i < MAX_CLIENTS; i++) {
+		if (client_sockets[i] == client_socket) {
+			client_sockets[i] = -1;
+			break;
+		}
+	}
+}
+
+// for proper authentication trim whitespace from string
+string trim(const string& str) {
+	size_t start = str.find_first_not_of(" \t\r\n");
+	size_t end = str.find_last_not_of(" \t\r\n");
+
+	if (start == string::npos || end == string::npos)
+		return "";
+	return str.substr(start, end - start + 1);
+}
+
+// now function to authenticate user by user&pass
+bool authenticate(const string& username, const string& password) {
+	ifstream credentials_file("credentials.txt");
+	if (!credentials_file) {
+		cerr << "Error opening creds file" << endl;
+		return false;
+	}
+
+	string stored_username, stored_password;
+	while (credentials_file >> stored_username >> stored_password) {
+		// debug
+		cout << "Read username: " << stored_username << ", Read password: " << stored_password << endl;
+		if (stored_username == username && stored_password == password) {
+			// debug
+			cout << "Entered username: " << username << ", Entered password: " << password << endl;
+			cout << "Authenticated!" << endl;
+			return true;
+		}
+	}
+
+
+	// entered and cond. invalid 
+
+}
+
 
 
 

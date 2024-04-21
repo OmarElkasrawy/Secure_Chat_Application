@@ -80,6 +80,8 @@ int main() {
 		// send user and pass lengths to server
 		int username_length = username.size();
 		send(sock, &username_length, sizeof(username_length), 0);
+		// debug
+		cout << "Sent username length: " << username_length << endl;
 
 		send(sock, username.c_str(), username_length, 0);
 

@@ -110,6 +110,9 @@ void handle_client(int client_socket, ofstream& chat_log) {
 			return;
 		}
 
+		//debug
+		cout << "Received username length: " << username_length << endl;
+
 
 		// recv username
 		bytes_received = recv(client_socket, buffer, username_length, 0);

@@ -24,7 +24,7 @@ void receive_messages(int sock) { // sock because socket cant be used
 
 		// null-terminate
 		buffer[bytes_received] = '\0';
-		std::cout << "Received: " << buffer << std::endl;
+		cout << "Received: " << buffer << endl;
 	}
 }
 
@@ -47,7 +47,7 @@ int main() {
 	// create socket
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
-		std::cerr << "Error creating socket" << std::endl;
+		cerr << "Error creating socket" << endl;
 		return 1;
 	}
 
@@ -59,7 +59,7 @@ int main() {
 
 	// connection
 	if (connect(sock, (sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-		std::cerr << "Error connecting to server" << std::endl;
+		cerr << "Error connecting to server" << endl;
 		return 1;
 	}
 

@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <cstring>
+#include <fstream>
 #include <algorithm> // can be removed
 
 
@@ -55,7 +56,6 @@ void remove_client(int client_socket) {
 string trim(const string& str) {
 	size_t start = str.find_first_not_of(" \t\r\n");
 	size_t end = str.find_last_not_of(" \t\r\n");
-
 	if (start == string::npos || end == string::npos)
 		return "";
 	return str.substr(start, end - start + 1);
@@ -65,7 +65,7 @@ string trim(const string& str) {
 bool authenticate(const string& username, const string& password) {
 	ifstream credentials_file("credentials.txt");
 	if (!credentials_file) {
-		cerr << "Error opening creds file" << endl;
+		cerr << "Error opening the creds file!" << endl;
 		return false;
 	}
 
@@ -74,7 +74,7 @@ bool authenticate(const string& username, const string& password) {
 		// debug
 		cout << "Read username: " << stored_username << ", Read password: " << stored_password << endl;
 		if (stored_username == username && stored_password == password) {
-			// debug
+			//debug
 			cout << "Entered username: " << username << ", Entered password: " << password << endl;
 			cout << "Authenticated!" << endl;
 			return true;
@@ -83,7 +83,7 @@ bool authenticate(const string& username, const string& password) {
 
 	// entered and cond. invalid 
 	cout << "Entered username: " << username << ", Entered password: " << password << endl;
-	cout << "Invalid creds!";
+	cout << "Invalid credentials!";
 	return false;
 }
 
@@ -96,15 +96,16 @@ void handle_client(int client_socket, ofstream& chat_log) {
 		current_client_number = client_count;
 	}
 
+
 	char buffer[1024];
 
 	// flag
 	bool authenticated = false;
 	string username, password;
-	while (!authenticate) {
-		// recv user length
+	while (!authenticated) {
+		// recv username length
 		int username_length;
-		int bytes_received = recv(client_socket, &username_length, size(username_length), 0);
+		int bytes_received = recv(client_socket, &username_length, sizeof(username_length), 0);
 		if (bytes_received <= 0) {
 			close(client_socket);
 			return;
@@ -123,6 +124,8 @@ void handle_client(int client_socket, ofstream& chat_log) {
 
 		buffer[bytes_received] = '\0';
 		username = string(buffer, username_length);
+		// debug
+		cout << "Read username: " << username << ", Read username length: " << bytes_received << :endl;
 
 		// recv password length
 		int password_length;
@@ -132,6 +135,9 @@ void handle_client(int client_socket, ofstream& chat_log) {
 			return;
 		}
 
+		// debug recv password length
+		cout << "Received password length: " << password_length << endl;
+
 		// recv password
 		bytes_received = recv(client_socket, buffer, password_length, 0);
 		if (bytes_received <= 0) {
@@ -139,11 +145,15 @@ void handle_client(int client_socket, ofstream& chat_log) {
 			return;
 		}
 
-		buffer[bytes_received] = '\0'; //null terminate
+		buffer[bytes_received] = '\0'; // null terminate
 		password = string(buffer, password_length);
+		// debug
+		cout << "Read password: " << password << ", Read password length: " << bytes_received << endl;
 
 		// check creds
 		authenticated = authenticate(username, password);
+		// debug
+		cout << "Entered username: " << username << ", Entered password: " << password << endl;
 
 		// send auth to client
 		const char* auth_result = authenticated ? "OK" : "ERROR";
@@ -174,7 +184,7 @@ void handle_client(int client_socket, ofstream& chat_log) {
 		}
 
 		// encrypt recv msg before writing to chat log
-		string encrypted_message = caesar_encrypt(buffer, 3); // const string &message, int shift
+		string encrypted_message = caesar_encrypt(buffer, 3); // Using Caesar cipher with a shift of 3
 		chat_log << "Client " << client_socket << ": " << encrypted_message << endl;
 	}
 
@@ -198,11 +208,9 @@ void handle_client(int client_socket, ofstream& chat_log) {
 
 
 
-
-
 int main() {
 	// create socket
-	int server_socket = socket(AF_IFNET, SOCK_STREAM, 0);
+	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_socket < 0) {
 		cerr << "Error creating socket" << endl;
 		return 1;
@@ -233,7 +241,7 @@ int main() {
 	// open chat log
 	ofstream chat_log("chat_log.txt");
 	if (!chat_log) {
-		cerr << "Error opening chat log file" << endl;
+		cerr << "Error opening chat log file" << std::endl;
 		return 1;
 	}
 

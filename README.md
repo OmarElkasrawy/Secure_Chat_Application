@@ -43,6 +43,11 @@ git clone https://github.com/OmarElkasrawy/Secure_Chat_Application.git
 g++ server.cpp -o server
 g++ client.cpp -o client
 ```
+
+- NOTE: if compiling client does not work and shoots 'undefined reference to' compile the client.cpp as follows:
+```bash
+g++ -std=c++11 -pthread client.cpp -o client -lstdc++
+```
 - Start the server:
 ```bash
 ./server
